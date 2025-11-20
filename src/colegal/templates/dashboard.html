@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard — COLEGAL SEVILLANO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        body { background: #f2f4f7; }
+        .card { border-radius: 12px; }
+        h2 { color: #003366; font-weight: 700; }
+        .badge-time { background: #002b5b; }
+    </style>
+</head>
+
+<body class="p-4">
+
+<div class="container">
+    <h2 class="mb-4">Dashboard del Proceso</h2>
+
+    <a href="/contrato" class="btn btn-primary mb-4">
+        <i class="bi bi-file-earmark-plus"></i> Crear nuevo contrato
+    </a>
+
+    {% if not case %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Aún no se ha generado ningún contrato.
+        </div>
+    {% else %}
+
+        <div class="card p-4 shadow-sm mb-4">
+            <h4>Resumen del Contrato</h4>
+
+            <ul class="list-group mb-3">
+                <li class="list-group-item"><strong>Vendedor:</strong> {{ case.vendedor }}</li>
+                <li class="list-group-item"><strong>Comprador:</strong> {{ case.comprador }}</li>
+                <li class="list-group-item"><strong>Fecha de generación:</strong> {{ case.fecha }}</li>
+                <li class="list-group-item"><strong>Archivo:</strong> {{ case.file }}</li>
+            </ul>
+
+            <a href="/download/{{ case.file }}" class="btn btn-success mb-4">
+                <i class="bi bi-download"></i> Descargar contrato
+            </a>
+        </div>
+
+        <div class="card p-4 shadow-sm">
+            <h4>Pipeline del Proceso</h4>
+
+            <table class="table table-bordered mt-3">
+                <thead>
+                    <tr>
+                        <th>Agente</th>
+                        <th>Estado</th>
+                        <th>Tiempo (s)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for step in case.pipeline %}
+                    <tr>
+                        <td>{{ step.agent }}</td>
+                        <td><span class="badge bg-success">✔ Completado</span></td>
+                        <td><span class="badge badge-time">{{ step.time }}</span></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    {% endif %}
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,15 @@
+fastapi~=0.116.1
+uvicorn
+openai~=1.109.1
+pydantic~=2.11.9
+python-dotenv~=1.1.0
+python-docx~=1.2.0
+sentence-transformers~=4.1.0
+numpy~=1.26.4
+Jinja2>=3.1.4
+python-multipart>=0.0.9
+bcrypt
+PyJWT
+gunicorn
+
+
