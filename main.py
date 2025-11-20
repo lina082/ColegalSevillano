@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 import os, uuid, json
 
-#  SEGURIDAD Nivel 2
+# Seguridad Nivel 2
 import jwt
 import bcrypt
 from datetime import datetime, timedelta
@@ -23,14 +23,15 @@ if not JWT_SECRET or not HASHED_PASSWORD:
     raise ValueError("⚠️ ERROR: No se encontraron JWT_SECRET o HASHED_PASSWORD en el .env")
 
 HASHED_PASSWORD = HASHED_PASSWORD.encode()
-
 JWT_ALGO = "HS256"
 
 FAILED_LOGINS = {}
 MAX_LOGIN_ATTEMPTS = 5
 BLOCK_TIME_MINUTES = 10
 
+# ============================================================
 #   CONFIGURACIÓN INICIAL
+# ============================================================
 app = FastAPI(title="COLEGAL SEVILLANO")
 
 app.mount("/static", StaticFiles(directory="src/colegal/static"), name="static")
@@ -38,9 +39,16 @@ templates = Jinja2Templates(directory="src/colegal/templates")
 
 
 # ============================================================
-#   FUNCIÓN PARA VALIDAR TOKEN
+# 🚑 HEALTH CHECK (Evita el error 502 en Render)
 # ============================================================
+@app.get("/", tags=["Health"])
+async def health_check():
+    return {"status": "ok", "service": "COLEGAL Sevilano", "code": 200}
 
+
+# ============================================================
+#   VALIDAR TOKEN
+# ============================================================
 def validar_token(request: Request):
     token = request.cookies.get("session")
     if not token:
@@ -55,15 +63,15 @@ def validar_token(request: Request):
 # ============================================================
 #   MIDDLEWARE DE AUTENTICACIÓN
 # ============================================================
-
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
 
     path = request.url.path
 
-    PUBLIC_ENDPOINTS = ("/login", "/static", "/generate")
+    # Agregar "/" como endpoint público
+    PUBLIC_ENDPOINTS = ("/", "/login", "/static", "/generate")
 
-    # Permitir descargas
+    # Permitir descargas de archivos
     if path.startswith("/download/"):
         return await call_next(request)
 
@@ -71,7 +79,7 @@ async def auth_middleware(request: Request, call_next):
     if any(path.startswith(p) for p in PUBLIC_ENDPOINTS):
         return await call_next(request)
 
-    # Verificación de sesión
+    # Verificar sesión
     token = request.cookies.get("session")
     if not token:
         return RedirectResponse("/login", status_code=303)
@@ -87,7 +95,6 @@ async def auth_middleware(request: Request, call_next):
 # ============================================================
 #   LOGIN
 # ============================================================
-
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request, "error": False})
@@ -122,10 +129,8 @@ async def login(request: Request, password: str = Form(...)):
         algorithm=JWT_ALGO
     )
 
-    # REDIRECT CORRECTO
     response = RedirectResponse(url="/home", status_code=303)
 
-    # COOKIE CORRECTA + PATH GLOBAL
     response.set_cookie(
         key="session",
         value=token,
@@ -145,7 +150,9 @@ async def logout():
     return response
 
 
+# ============================================================
 #   HOME
+# ============================================================
 @app.get("/home", response_class=HTMLResponse)
 async def home(request: Request):
     if not validar_token(request):
@@ -156,7 +163,6 @@ async def home(request: Request):
 # ============================================================
 #   DASHBOARD
 # ============================================================
-
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request):
     last_case_path = os.path.join("data", "last_case.json")
@@ -179,7 +185,6 @@ async def dashboard(request: Request):
 # ============================================================
 #   FORMULARIO
 # ============================================================
-
 @app.get("/contrato", response_class=HTMLResponse)
 async def show_form(request: Request):
     if not validar_token(request):
@@ -190,7 +195,6 @@ async def show_form(request: Request):
 # ============================================================
 #   GENERAR CONTRATO
 # ============================================================
-
 @app.post("/generate", response_class=HTMLResponse)
 async def generate_contract(
     request: Request,
@@ -269,9 +273,8 @@ async def generate_contract(
 
     file_name = ctx.data.get("generated_file")
 
-    # guardar caso en dashboard
-    last_case_path = os.path.join("data", "last_case.json")
     os.makedirs("data", exist_ok=True)
+    last_case_path = os.path.join("data", "last_case.json")
 
     with open(last_case_path, "w", encoding="utf-8") as f:
         json.dump({
@@ -288,15 +291,14 @@ async def generate_contract(
         {
             "request": request,
             "file_name": file_name,
-            "llm_analysis": ctx.data.get("llm_analysis", ""),
+            "llm_analysis": ctx.data.get("llm_analysis", "")
         }
     )
 
 
 # ============================================================
-#   DESCARGA
+#   DESCARGA DE CONTRATOS
 # ============================================================
-
 @app.get("/download/{filename}")
 async def download_file(filename: str):
     path = os.path.join("data", "generated", filename)
